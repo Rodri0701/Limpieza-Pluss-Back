@@ -1,0 +1,89 @@
+📌 Carpeta models (apuntes de clases)
+1) ¿Qué es y para qué se usa?
+En FastAPI, la carpeta models se utiliza para definir la estructura de los datos persistentes, es decir: aquí se “modelan” las tablas de la base de datos (y su esquema) usando SQLAlchemy.
+
+Piensa que esta carpeta es el “puente” entre:
+
+el mundo de Python (clases),
+y la base de datos (tablas, columnas y tipos).
+
+2) Cómo se construyen los modelos (SQLAlchemy)
+En cada archivo de modelo, se trabaja con:
+
+Base: es la clase base de SQLAlchemy desde donde heredan tus modelos.
+Column: sirve para declarar cada columna de la tabla.
+Tipos de columna como Integer, String, Double (dependiendo del campo).
+En tu proyecto, Base viene de:
+
+config/database.py (en donde se crea el declarative_base())
+Esto permite que SQLAlchemy sepa que las clases del folder models representan entidades que deben mapearse a tablas.
+
+3) Archivo product_model.py (ejemplo de modelo de tabla)
+En models/product_model.py se define el modelo Producto.
+
+a) Se configura la tabla
+
+class Producto(Base):
+    __tablename__ = "productos"
+class Producto(Base) significa: “Producto es una entidad SQLAlchemy”.
+__tablename__ = "productos" indica: esta clase corresponde a una tabla llamada productos en la base de datos.
+b) Se definen columnas
+Dentro de la clase se declaran columnas como:
+
+id_Producto = Column(Integer, primary_key=True, index=True)
+
+Integer: tipo numérico entero.
+primary_key=True: identifica de forma única cada producto.
+index=True: crea un índice para acelerar búsquedas por ese campo.
+nombre_Producto = Column(String)
+
+precio = Column(Double)
+
+Descripcion = Column(String)
+
+Categoria = Column(String)
+
+Stock = Column(Integer)
+
+Resultado: con esto, el modelo queda especificado con su “forma” real en la base de datos: qué columnas tiene la tabla, qué tipo usa cada una y cuál es su llave primaria.
+
+En términos de clase: “Aquí se crea la estructura de la tabla desde Python”.
+
+4) Archivo service_model.py y user_model.py
+En el proyecto se encuentran también estos archivos en la carpeta models, pero en la lectura disponible el contenido de:
+
+service_model.py aparece vacío,
+user_model.py aparece vacío/contiene solo espacios (no hay definición legible).
+Aun así, por la estructura del proyecto, su propósito esperado (consistente con product_model.py) sería:
+
+service_model.py: definir la tabla para servicios (campos, tipos, llaves).
+user_model.py: definir la tabla de usuarios (id, usuario/email, password hash, rol, etc. — aunque aquí no se ve implementado en el contenido leído).
+5) Notas.txt (resumen del propósito de la carpeta)
+El archivo models/Notas.txt refuerza el significado de esta carpeta:
+
+“TODO LO QUE ESTA DENTRO DE LA CARPETA DE MODELOS
+
+SON BASICAMENTE LA CREACION QUE TENDRA LA TABLA EN LA BASE DE DATOS
+
+DESDE EL NOMBRE, COLUMNAS ASI MISMO SE TENDRA EL CONTROL DEL MODELO DE LA BASE DE DATOS.”
+
+Esto coincide exactamente con lo que hace SQLAlchemy en los modelos:
+
+define el nombre de tabla (__tablename__)
+define sus columnas (Column(...))
+y controla el esquema que se usará para persistir datos.
+6) ¿Cómo se relaciona esto con FastAPI?
+FastAPI normalmente se apoya en:
+
+routes (endpoints),
+schemas (validación/serialización),
+services (lógica de negocio),
+y models (persistencia en BD).
+Entonces, aunque FastAPI reciba/entregue datos en schemas, cuando llega el momento de guardar o consultar en la base de datos, se usa el modelo de models.
+
+Resumen final (idea clave de examen)
+✅ En models se define la estructura de las tablas de la base de datos mediante clases SQLAlchemy, declarando:
+
+__tablename__ (nombre de tabla),
+Column(...) (campos y tipos),
+y llaves primarias/índices.

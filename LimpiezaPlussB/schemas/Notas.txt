@@ -1,0 +1,50 @@
+En la carpeta Limpieza-Pluss-B/schemas/ se trabaja el esquema de datos que FastAPI maneja para validar y transformar la información que entra y sale de los endpoints.
+
+1) ¿Qué significa “schemas” en FastAPI?
+FastAPI usa schemas (normalmente con Pydantic) para:
+
+Validar los datos recibidos desde el cliente (request).
+Definir la forma de los datos que se regresan al cliente (response).
+Estandarizar el intercambio de información: el cliente sabe qué campos mandar y el servidor sabe qué campos devolver.
+En tu proyecto, la carpeta schemas contiene clases que describen los campos del modelo (por ejemplo Producto), pero en forma de esquema Pydantic (no como tabla SQL).
+
+2) Estructura general
+Los archivos dentro de schemas típicamente contienen:
+
+Clases que heredan de pydantic.BaseModel.
+Campos tipados (strings, enteros, floats) que representan atributos del recurso.
+3) Archivo product_schema.py (ejemplo real)
+En schemas/product_schema.py se define:
+
+Importación:
+
+from pydantic import BaseModel
+Esto habilita la creación de esquemas basados en Pydantic.
+Clase de esquema:
+
+class ProductoCreate(BaseModel):
+Esta clase representa el “contrato” que se espera cuando se crea un producto.
+Campos del esquema (definidos con tipos):
+
+nombre_Producto: str
+precio: float
+Descripcion: str
+Categoria: str
+Stock: int
+¿Qué logra esto?
+Cuando un endpoint reciba un JSON para crear un producto:
+
+FastAPI verificará que existan los campos requeridos.
+Convertirá/validará tipos cuando sea posible (ej. precio como float, stock como int).
+Si el cliente manda datos con estructura incorrecta, FastAPI responderá con error de validación.
+4) (Importante) Diferencia entre schemas y models
+Aunque ambos describen “datos”, cumplen roles distintos:
+
+models: define la estructura de la base de datos (tablas y columnas con SQLAlchemy).
+schemas: define la estructura de intercambio (request/response) y validación con Pydantic.
+En pocas palabras:
+
+models = “cómo se guarda en BD”.
+schemas = “cómo se recibe/entrega vía API”.
+5) Notas generales de la carpeta
+El propósito del folder schemas es que FastAPI trabaje con datos bien formados y con tipos definidos antes de que esos datos lleguen a la lógica de negocio y/o a la base de datos.

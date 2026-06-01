@@ -1,0 +1,61 @@
+1) ¿Qué es services?
+FastAPI organiza el proyecto para que cada capa haga su trabajo:
+
+Routes: reciben la petición HTTP (endpoint).
+Schemas: validan/estructura los datos que entran y salen.
+Models: representan las tablas de la base de datos.
+Services: ejecutan la lógica real de la aplicación (crear, consultar, actualizar, eliminar, y reglas internas).
+En otras palabras: services es donde se decide cómo se manipulan los datos antes de regresar una respuesta al endpoint.
+
+2) Estructura típica del service
+En esta carpeta se manejan funciones que:
+
+Reciben una sesión de BD (Session de SQLAlchemy).
+Reciben los datos (normalmente desde un schema o desde un request).
+Usan los models SQLAlchemy para crear/consultar objetos.
+Aplican las operaciones de base de datos:
+db.add(...)
+db.commit()
+db.refresh(...)
+Retornan el objeto final para que el route lo convierta/entregue como respuesta.
+3) Archivo product_service.py (ejemplo real)
+Aquí se define la lógica para productos.
+
+a) Importación de dependencia
+
+from sqlalchemy.orm import Session
+from ..models.product_model import Producto
+Session permite conectarte a la BD y ejecutar operaciones.
+Producto es el modelo SQLAlchemy que mapea a la tabla productos.
+b) Función: crear_producto
+
+def crear_producto(db: Session, producto):
+Esta función actúa como “caso de uso” de la aplicación para crear un producto.
+
+c) Crear instancia del modelo
+Dentro se genera un objeto SQLAlchemy:
+
+Se instancia Producto(...)
+Se asignan los atributos (nombre, precio, descripción, categoría, stock) con los datos del input.
+d) Persistir en la base de datos
+Luego la lógica hace el ciclo típico de SQLAlchemy:
+
+db.add(nuevo_producto) → marca el objeto para insertarlo.
+db.commit() → confirma la transacción y guarda en BD.
+db.refresh(nuevo_producto) → recarga el objeto desde BD (por ejemplo, para obtener valores generados como el id).
+e) Retorno
+
+return nuevo_producto
+La función regresa el objeto ya guardado para que el endpoint lo envíe al cliente.
+
+4) ¿Para qué sirve separar routes y services?
+Separar services de routes hace que:
+
+El endpoint sea limpio (solo recibe y responde).
+La lógica de BD y reglas de negocio se mantenga centralizada.
+El código sea más fácil de probar y reutilizar.
+5) Resumen tipo apuntes (idea central)
+Routes: interfaz HTTP.
+Schemas: validación y estructura de datos.
+Models: mapeo a tablas.
+Services: lógica de negocio y operaciones reales con la base de datos.

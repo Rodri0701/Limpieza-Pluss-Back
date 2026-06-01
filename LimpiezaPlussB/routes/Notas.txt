@@ -1,0 +1,84 @@
+1) ¿Qué se declara en cada archivo de routes?
+Normalmente, un archivo de rutas contiene:
+
+Un router (agrupador de endpoints).
+Funciones auxiliares (ej. para obtener conexión/BD).
+Decoradores @router.get(...), @router.post(...), etc.
+Parámetros del endpoint (body JSON, query params, etc.).
+2) Archivo routes/product_route.py (implementación real)
+Este archivo implementa la ruta relacionada con productos.
+
+a) Importaciones
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from ..schemas.product_schema import ProductoCreate
+from ..services.product_service import crear_producto
+from ..config.database import SessionLocal
+APIRouter: permite agrupar endpoints del módulo “productos”.
+Depends: mecanismo de inyección de dependencias (para pasar automáticamente la sesión de BD).
+Session: tipo de la sesión de SQLAlchemy.
+ProductoCreate: schema Pydantic que define el formato del body que envía el cliente al crear un producto.
+crear_producto: función del service donde se ejecuta la lógica de inserción en la base.
+SessionLocal: factoría para crear una sesión de SQLAlchemy.
+b) Creación del router
+
+router = APIRouter()
+Aquí se crea el contenedor para registrar endpoints. Este router luego se conectará a la app principal (en tu proyecto suele hacerse en main.py o donde se registren routers).
+
+c) Dependencia get_db() (sesión de base de datos)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+
+    finally:
+        db.close()
+Qué hace:
+
+Abre una sesión con la base de datos con SessionLocal().
+La entrega al endpoint (con yield).
+Al terminar el request, se cierra la conexión con db.close().
+Objetivo: evitar conexiones abiertas y reutilizar el mismo patrón en todos los endpoints.
+
+d) Endpoint: creación de producto
+
+@router.post("/productos")
+def crear(producto: ProductoCreate, db: Session = Depends(get_db)):
+    return crear_producto(db, producto)
+Este es el endpoint principal del archivo:
+
+@router.post("/productos")
+
+Define que la ruta será atendida por el método POST.
+La URL del endpoint es /productos.
+Parámetro producto: ProductoCreate
+
+FastAPI toma el body JSON del request.
+Lo valida con el esquema Pydantic ProductoCreate.
+Ejemplo conceptual de body:
+nombre_Producto, precio, Descripcion, Categoria, Stock.
+Parámetro db: Session = Depends(get_db)
+
+FastAPI llama automáticamente a get_db().
+Te entrega una sesión SQLAlchemy lista para usar.
+Delegación a services
+
+return crear_producto(db, producto)
+La ruta no inserta directamente en la BD: solo coordina.
+La inserción real ocurre en services/product_service.py.
+3) Flujo completo del endpoint POST /productos
+Llega una petición HTTP POST a /productos.
+FastAPI valida el body contra ProductoCreate.
+FastAPI inyecta db usando Depends(get_db).
+La ruta llama a crear_producto(db, producto).
+El service ejecuta la operación en la base.
+La respuesta se retorna al cliente.
+4) Resumen final (apunte para tu documento)
+En routes/ se definen las rutas (endpoints) de FastAPI.
+Se usa APIRouter para organizar endpoints por módulo.
+Se usa Depends(get_db) para inyectar una sesión de base de datos.
+Se usa schemas para validar el body del request.
+Se delega la lógica real a services, manteniendo las rutas limpias.

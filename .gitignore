@@ -20,3 +20,6 @@ alembic/versions/__pycache__/
 
 # Sistema
 .DS_Store
+
+#NOTAS
+.txt
