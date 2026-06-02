@@ -25,7 +25,7 @@ def crear_producto(db: Session, producto):
     )
     
     #VALIDA QUE EL NOMBRE NO VAYA VACIO
-    if not producto.nombre_producto.strip():
+    if not producto.nombre_Producto.strip():
         raise HTTPException(
             status_code=400,
             detail="El nombre no puede ser vacio"
@@ -53,13 +53,13 @@ def crear_producto(db: Session, producto):
         
 #VALIDACIONES PARA EL STOCK
         #EL STOCK NO PUEDE SER MENOR A 5
-    if producto.stock < 5:
+    if producto.Stock < 5:
         raise HTTPException(
             status_code=400,
             detail="No puedes tener stock por debajo de 5"
         )
         # EL STOCK NO PUEDE SER MAYOR A 10MIL
-    if producto.stock >=10000:
+    if producto.Stock >=10000:
         raise HTTPException(
             status_code= 400,
             detail = "No puedes agregar tanto a existencia"
@@ -71,10 +71,20 @@ def crear_producto(db: Session, producto):
             status_code=400,
             detail = "EN EXISTENCIA"
         )
+        
+#VALIDA EL DESCUENTO NO SEA NEGATIVO
+
+    if producto.descuento < 0:
+        raise HTTPException(
+            status_code = 400,
+            detail = "No puedes aplicar un descuento negativo"
+        )
      
     
         # CREA EL PRODUCTO SEGUN EL MODELO
-    nuevo_producto = Producto(**producto.model_dump()) 
+    nuevo_producto = Producto(**producto.model_dump(),
+                               user_alta="SISTEMA"
+) 
     
         
     db.add(nuevo_producto)
