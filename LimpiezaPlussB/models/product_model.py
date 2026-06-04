@@ -15,4 +15,9 @@ class Producto(Base): #Clase para crear la tabla que sera en base de datos desde
     fecha_creacion = Column(DateTime, default=DateTime)
     user_alta = Column(String(50))
     
+    #COLUMNAS PARA COTROLAR LA EDICION DE LA INFORMACIÓN
+    
+    user_update = Column(String(50), nullable= True)
+    fecha_update = Column(DateTime, nullable= True)
+    
     

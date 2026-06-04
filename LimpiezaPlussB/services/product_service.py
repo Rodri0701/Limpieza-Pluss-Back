@@ -2,9 +2,14 @@ from sqlalchemy.orm import Session
 from ..models.product_model import Producto
 from fastapi import HTTPException
 from sqlalchemy import func
+from datetime import datetime
 import re
 
+
+#FUNCION PARA CREAR UN PRODUCTO NUEVO 
 def crear_producto(db: Session, producto):
+    
+
     # nuevo_producto = Producto(
     # nombre_Producto=producto.nombre_Producto,
     # precio=producto.precio,
@@ -82,8 +87,8 @@ def crear_producto(db: Session, producto):
      
     
         # CREA EL PRODUCTO SEGUN EL MODELO
-    nuevo_producto = Producto(**producto.model_dump(),
-                               user_alta="SISTEMA"
+    nuevo_producto = Producto(  **producto.model_dump(),
+                               user_alta="SISTEMA", user_update=None, fecha_creacion= datetime.now()
 ) 
     
         
@@ -92,3 +97,68 @@ def crear_producto(db: Session, producto):
     db.refresh(nuevo_producto)
     
     return nuevo_producto
+
+#FUNCION PARA MOSTRAR POR ID DE PRODUCTO UNICO
+def obtener_producto(db: Session, id_producto: int):
+    producto = db.query(Producto).filter(
+        Producto.id_Producto == id_producto
+    ).first()
+
+    if not producto:
+        raise HTTPException(
+            status_code=404,
+            detail="Producto no encontrado"
+        )
+
+    return producto
+
+#FUNCION PARA VER TODOS LOS PRODUCTOS
+def obtener_productos(db: Session):
+    
+    return db.query(Producto).all()
+
+#FUNCION PARA ACTUALIZAR UN PRODUCTO EXISTENTE
+def actualizar_producto(
+    db: Session,
+    id_producto: int,
+    producto_actualizado: Producto
+):
+    producto = db.query(Producto).filter(
+        Producto.id_Producto == id_producto
+    ).first()
+
+    if not producto:
+        raise HTTPException(
+            status_code=404,
+            detail="Producto no encontrado"
+        )
+
+    datos = producto_actualizado.model_dump(exclude_unset=True)
+
+    for campo, valor in datos.items():
+        setattr(producto, campo, valor)
+        
+    producto.user_update = "SISTEMA"
+    producto.fecha_update = datetime.now()
+
+    db.commit()
+    db.refresh(producto)
+
+    return producto
+
+
+#FUNCION PARA ELIMINAR MEDIANTE 1
+def eliminar_producto(db: Session, id_producto: int):
+
+    producto = db.query(Producto).filter(
+        Producto.id_Producto == id_producto
+    ).first()
+
+    if not producto:
+        raise HTTPException(
+            status_code=404,
+            detail="Producto no encontrado"
+        )
+
+    db.delete(producto)
+    db.commit()
