@@ -13,6 +13,7 @@ class Usuarios(Base):
     colonia = Column(String(100), nullable=True)
     num_exterior = Column(String(20), nullable=True) 
     hashed_password = Column(String(255), nullable=False)
+    roll = Column(String(20), nullable = False, default= "user")
     
     
     

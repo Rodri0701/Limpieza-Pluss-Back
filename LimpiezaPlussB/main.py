@@ -2,6 +2,7 @@ from fastapi import FastAPI #SE IMPORTA FASTAPI
 from .config.database import engine, Base
 from .routes.product_route import router as producto_router
 from .routes.user_routes import router as User_Router
+from .routes.service_route import router as Service_Router
 
 
 app = FastAPI()
@@ -9,6 +10,7 @@ Base.metadata.create_all(bind=engine)
 
 app.include_router(producto_router)
 app.include_router(User_Router)
+app.include_router(Service_Router)
 
 
 @app.get("/")

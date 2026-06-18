@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
+
 # 1. Schema Base: Atributos comunes que comparten todos los schemas
 class UsuarioBase(BaseModel):
     email: EmailStr
@@ -10,6 +11,7 @@ class UsuarioBase(BaseModel):
     calle: Optional[str] = None
     colonia: Optional[str] = None
     num_exterior: Optional[str] = Field(None, max_length=20)
+    
 
 
 class UsuarioCreate(UsuarioBase):
@@ -24,6 +26,7 @@ class UsuarioUpdate(BaseModel):
     colonia: Optional[str] = None
     num_exterior: Optional[str] = None
     password: Optional[str] = None # Por si quiere cambiar su contraseña
+   
 
 class UsuarioResponse(UsuarioBase):
     id_user: int
