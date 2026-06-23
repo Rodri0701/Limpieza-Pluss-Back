@@ -31,7 +31,7 @@ def crear_servicio(servicio_in: ServicioCreate, db: Session):
 
 def obtener_servicios(db: Session):
     
-    return db.query(Servicio).all()
+   return db.query(Servicio).filter(Servicio.Status_servicio == "A").all()
 
 # LEER POR ID
 def obtener_servicio_por_id(servicio_id: int, db: Session):
@@ -51,7 +51,7 @@ def actualizar_servicio(servicio_id: int, servicio_in: ServicioUpdate, db: Sessi
         nuevo_nombre = datos_a_actualizar["nombre_Servicio"]
         nombre_ocupado = db.query(Servicio).filter(
             Servicio.nombre_Servicio == nuevo_nombre, 
-            Servicio.id_Servicio != servicio_id # Excluimos el servicio actual de la búsqueda
+            Servicio.id_Servicio != servicio_id
         ).first()
         if nombre_ocupado:
             raise HTTPException(status_code=400, detail="Ese nombre ya está en uso por otro servicio.")

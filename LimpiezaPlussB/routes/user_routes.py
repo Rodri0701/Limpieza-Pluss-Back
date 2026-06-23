@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from ..services.user_service import crear_usuario, view_usuario, actualizar_usuario,eliminar_usuario
+from ..services.user_service import crear_usuario, obtener_todos_los_usuarios, actualizar_usuario,eliminar_usuario
 from ..schemas.user_schema import UsuarioCreate, UsuarioResponse, UsuarioUpdate
 from ..config.database import SessionLocal
 
-router = APIRouter()
+from ..config.dependencies import obtener_usuario_actual, obtener_usuario_admin
+from ..models.user_model import Usuarios
+from typing import List
+
+router = APIRouter(tags=["Usuarios"])
 
 def get_db():
     db = SessionLocal()
@@ -21,32 +25,27 @@ def crear(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     
 
 #RUTA PARA QUE EL USUARIO EN SESION PUEDA VER SOLO SU INFORMACION
-@router.get("/vista_user/{usuario_id}", response_model=UsuarioResponse) 
-def ver (usuario_id: int, db: Session = Depends(get_db)):
-    return view_usuario(usuario_id,db)
+@router.get("/usuarios/me", response_model= UsuarioResponse)
+def ver_mi_perfil(usuario_actual: Usuarios = Depends(obtener_usuario_actual)):
+    return usuario_actual
 
 
 # #RUTA PARA ACTUALIZAR SUS DATOS
-@router.put("/usuario/{usuario_id}", response_model=UsuarioResponse)
-def actualizar(
-    usuario_id: int, 
-    usuario_in: UsuarioUpdate, # 1. Le pedimos a FastAPI que reciba el JSON del cliente
-    db: Session = Depends(get_db)
-):
-    # 2. Le pasamos los 3 datos completos a tu servicio
-    actualizar_usuario(
-        usuario_id=usuario_id, 
-        db=db, 
-        usuario_in=usuario_in
-    )
-    
-    return ("Se actualizó de forma exitosa")
+@router.put("/usuarios/me", response_model=UsuarioResponse)
+def actualziar_mi_perfil( datos_actualizar: UsuarioUpdate, db: Session = Depends(get_db), usuario_actual: Usuarios = Depends(obtener_usuario_actual)):
+    return actualizar_usuario(db=db, usuario_id= usuario_actual.id_user, usuario_in= datos_actualizar)
 
 # #RUTA PARA ELIMINAR AL USUARIO
-@router.delete("/usuario/{usuario_id}")
-def delete_user(
-  usuario_id : int,
-  db: Session = Depends(get_db)  
+@router.delete("/usuarios/me")
+def eliminar_mi_cuenta(
+    db: Session = Depends(get_db),
+    usuario_actual: Usuarios = Depends(obtener_usuario_actual)
 ):
-    eliminar_usuario(db,usuario_id)
-    return ( "Eliminado exitosamente")
+    return eliminar_usuario(db=db, usuario_id= usuario_actual.id_user)
+
+
+# RUTA UNICA PARA EL ADMINISTRADOR
+@router.get("/usuarios/todos", response_model=List[UsuarioResponse])
+def ver_todos_los_usuarios( db: Session = Depends(get_db),  admin: Usuarios = Depends(obtener_usuario_admin)
+):
+    return obtener_todos_los_usuarios (db=db)

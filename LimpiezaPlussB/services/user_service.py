@@ -69,3 +69,5 @@ def eliminar_usuario(db:Session, id_usuario: int):
     db.delete(usuario)
     db.commit()
     
+def obtener_todos_los_usuarios(db: Session):
+    return db.query(Usuarios).all()

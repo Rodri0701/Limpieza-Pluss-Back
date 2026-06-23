@@ -33,3 +33,8 @@ class UsuarioResponse(UsuarioBase):
 
     # Forma actualizada para Pydantic V2
     model_config = {"from_attributes": True}
+    
+    
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
