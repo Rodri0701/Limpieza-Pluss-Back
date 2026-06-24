@@ -1,23 +1,26 @@
-from sqlalchemy import Column,Integer,String, Numeric, DateTime, Boolean  #IMPORTA FRAGMENTOS DE LA TABLA DE SQL COMO NORMALMENTE SE HACE DE FORMA NATIVA EN UN GESTOR DE BD
-from ..config.database import Base #IMPORTAMOS EL DATABASE.PY 
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, Boolean
+from sqlalchemy.sql import func # IMPORTANTE: Para que la base de datos ponga la fecha exacta
+from ..config.database import Base
 
-
-class Producto(Base): #Clase para crear la tabla que sera en base de datos desde python
-    __tablename__ = "productos" #NOMBRE DE LA TABLA QUE SE ALOJARA EN LA BD CREADA EN PYTHON
+class Producto(Base):
+    __tablename__ = "productos" 
     
-    id_Producto = Column(Integer, primary_key=True, index=True) #CREAMOS UN CAMPO COMO SE HARIA EN LA BASE DE DATOS
-    nombre_Producto = Column(String(100), unique=True, nullable=False) #COLUMNA DE TIPO STRING PARA EL NOMBRE
-    precio = Column(Numeric(10,2), nullable= False) #COLUMNA DEL NUMERIC Float
-    Descripcion = Column(String(500), nullable= False) #COLUMNA DE TIPO STRING
-    Categoria = Column(String(100), nullable= False) #COLUMNA DE TIPO STRING
-    Stock = Column(Integer, nullable= False) 
-    descuento = Column(Integer, nullable= False)
-    fecha_creacion = Column(DateTime, default=DateTime)
-    user_alta = Column(String(50))
+    # Estandarizamos todo a minúsculas (snake_case)
+    id_producto = Column(Integer, primary_key=True, index=True) 
+    nombre_producto = Column(String(100), unique=True, nullable=False) 
+    precio = Column(Numeric(10,2), nullable=False) 
+    descripcion = Column(String(500), nullable=False) 
+    categoria = Column(String(100), nullable=False) 
+    stock = Column(Integer, nullable=False) 
+    descuento = Column(Integer, nullable=False)
     
-    #COLUMNAS PARA COTROLAR LA EDICION DE LA INFORMACIÓN
+    # NUEVO: Estatus para el Borrado Lógico ("A" = Activo, "I" = Inactivo)
+    status = Column(String(1), default="A", nullable=False)
     
-    user_update = Column(String(50), nullable= True)
-    fecha_update = Column(DateTime, nullable= True)
+    # CORRECCIÓN: func.now() asegura que se guarde la fecha del momento exacto
+    fecha_creacion = Column(DateTime, default=func.now())
     
-    
+    # Estas columnas guardarán el ID (int) del Administrador que hizo la acción
+    user_alta = Column(Integer, nullable=True) 
+    user_update = Column(Integer, nullable=True)
+    fecha_update = Column(DateTime, nullable=True, onupdate=func.now()) # Se actualiza sola al editar

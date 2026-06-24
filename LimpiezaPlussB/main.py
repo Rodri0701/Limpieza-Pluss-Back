@@ -4,6 +4,8 @@ from .routes.product_route import router as producto_router
 from .routes.user_routes import router as User_Router
 from .routes.service_route import router as Service_Router
 from .routes.auth_routes.authRoutes import router as LoginRoute
+from .routes.wishlist_route import router as WishListRoute
+from .routes.reserva_routes import router as ReservaRoute
 
 
 app = FastAPI()
@@ -13,6 +15,8 @@ app.include_router(producto_router)
 app.include_router(User_Router)
 app.include_router(Service_Router)
 app.include_router(LoginRoute)
+app.include_router(WishListRoute)
+app.include_router(ReservaRoute)
 
 
 @app.get("/")

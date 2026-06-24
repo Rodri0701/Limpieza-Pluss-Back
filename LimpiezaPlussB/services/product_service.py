@@ -1,164 +1,115 @@
 from sqlalchemy.orm import Session
-from ..models.product_model import Producto
 from fastapi import HTTPException
 from sqlalchemy import func
-from datetime import datetime
 import re
 
+from ..models.product_model import Producto
+from ..schemas.product_schema import ProductoCreate, ProductoUpdate
 
-#FUNCION PARA CREAR UN PRODUCTO NUEVO 
-def crear_producto(db: Session, producto):
+# ==========================================
+# 1. CREAR PRODUCTO
+# ==========================================
+def crear_producto(db: Session, producto: ProductoCreate, admin_id: int):
+    # 1. Limpieza de datos
+    producto.nombre_producto = producto.nombre_producto.strip() 
     
-
-    # nuevo_producto = Producto(
-    # nombre_Producto=producto.nombre_Producto,
-    # precio=producto.precio,
-    # Descripcion=producto.Descripcion,
-    # Categoria=producto.Categoria,
-    # Stock=producto.Stock
-    # )
-    
-#VALIDACIONES PARA NOMBRE
-    
-    producto.nombre_Producto = producto.nombre_Producto.strip() #Evita espacios extras en el nombre
-    
-     # VALIDAR QUE NO VAYA CON CARACTERES ESPECIALES
-    if not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]+$', producto.nombre_Producto):
-        raise HTTPException(
-            status_code=400,
-            detail="Nombre con caracteres inválidos"
-    )
-    
-    #VALIDA QUE EL NOMBRE NO VAYA VACIO
-    if not producto.nombre_Producto.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="El nombre no puede ser vacio"
-        )
+    # 2. Validaciones estrictas
+    if not producto.nombre_producto:
+        raise HTTPException(status_code=400, detail="El nombre no puede estar vacío")
         
-       # VALIDAR MINUSCULAS O MAYUSCULAS POR IGUAL
-    existe = db.query(Producto).filter(
-       func.lower(Producto.nombre_Producto) == producto.nombre_Producto.lower()
-).first()
-    
-#VALIDACIONES PARA EL PRECIO    
+    if not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]+$', producto.nombre_producto):
+        raise HTTPException(status_code=400, detail="Nombre con caracteres inválidos")
 
-    #EL PRECIO NO PUEDE SER NEGATIVO O CERO
-    if producto.precio <=0:
-        raise HTTPException(
-            status_code=400,
-            detail="El precio no puede ser menor"
-        )
-        #EL PRECIO NO PUEDE SER MUY POR ENCIMA DE 100000
     if producto.precio >= 100000:
-        raise HTTPException(
-            status_code= 400,
-            detail = "Precio extremadamente fuera del rango"
-        )
-        
-#VALIDACIONES PARA EL STOCK
-        #EL STOCK NO PUEDE SER MENOR A 5
-    if producto.Stock < 5:
-        raise HTTPException(
-            status_code=400,
-            detail="No puedes tener stock por debajo de 5"
-        )
-        # EL STOCK NO PUEDE SER MAYOR A 10MIL
-    if producto.Stock >=10000:
-        raise HTTPException(
-            status_code= 400,
-            detail = "No puedes agregar tanto a existencia"
-        )
+        raise HTTPException(status_code=400, detail="Precio extremadamente fuera de rango")
 
-    # QUE NO HAYA DUCPLICADOS
+    if producto.stock >= 10000:
+        raise HTTPException(status_code=400, detail="No puedes agregar tanto a existencia")
+
+    # 3. Verificar duplicados (usamos lower para evitar que "JABÓN" y "jabón" existan a la vez)
+    existe = db.query(Producto).filter(
+        func.lower(Producto.nombre_producto) == producto.nombre_producto.lower()
+    ).first()
+    
     if existe:
-        raise HTTPException(
-            status_code=400,
-            detail = "EN EXISTENCIA"
-        )
-        
-#VALIDA EL DESCUENTO NO SEA NEGATIVO
+        raise HTTPException(status_code=400, detail="Este producto ya existe en el catálogo.")
 
-    if producto.descuento < 0:
-        raise HTTPException(
-            status_code = 400,
-            detail = "No puedes aplicar un descuento negativo"
-        )
-     
+    # 4. Crear el producto asignando el ID del administrador real
+    nuevo_producto = Producto(
+        **producto.model_dump(),
+        user_alta=admin_id  # Guardamos quién lo creó
+    ) 
     
-        # CREA EL PRODUCTO SEGUN EL MODELO
-    nuevo_producto = Producto(  **producto.model_dump(),
-                               user_alta="SISTEMA", user_update=None, fecha_creacion= datetime.now()
-) 
-    
-        
     db.add(nuevo_producto)
     db.commit()
     db.refresh(nuevo_producto)
     
     return nuevo_producto
 
-#FUNCION PARA MOSTRAR POR ID DE PRODUCTO UNICO
+# ==========================================
+# 2. LEER PRODUCTO POR ID
+# ==========================================
 def obtener_producto(db: Session, id_producto: int):
+    # Solo mostramos productos que sigan activos ("A")
     producto = db.query(Producto).filter(
-        Producto.id_Producto == id_producto
+        Producto.id_producto == id_producto,
+        Producto.status == "A"
     ).first()
 
     if not producto:
-        raise HTTPException(
-            status_code=404,
-            detail="Producto no encontrado"
-        )
+        raise HTTPException(status_code=404, detail="Producto no encontrado o descontinuado")
 
     return producto
 
-#FUNCION PARA VER TODOS LOS PRODUCTOS
+# ==========================================
+# 3. LEER TODOS LOS PRODUCTOS
+# ==========================================
 def obtener_productos(db: Session):
-    
-    return db.query(Producto).all()
+    # Solo traemos los activos
+    return db.query(Producto).filter(Producto.status == "A").all()
 
-#FUNCION PARA ACTUALIZAR UN PRODUCTO EXISTENTE
-def actualizar_producto(
-    db: Session,
-    id_producto: int,
-    producto_actualizado: Producto
-):
+# ==========================================
+# 4. ACTUALIZAR PRODUCTO
+# ==========================================
+def actualizar_producto(db: Session, id_producto: int, producto_actualizado: ProductoUpdate, admin_id: int):
     producto = db.query(Producto).filter(
-        Producto.id_Producto == id_producto
+        Producto.id_producto == id_producto,
+        Producto.status == "A"
     ).first()
 
     if not producto:
-        raise HTTPException(
-            status_code=404,
-            detail="Producto no encontrado"
-        )
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
 
+    # Extraemos solo los campos que el usuario realmente envió (exclude_unset=True)
     datos = producto_actualizado.model_dump(exclude_unset=True)
 
     for campo, valor in datos.items():
         setattr(producto, campo, valor)
         
-    producto.user_update = "SISTEMA"
-    producto.fecha_update = datetime.now()
+    # Auditoría: Quién lo editó (La fecha se actualiza sola por el onupdate del modelo)
+    producto.user_update = admin_id
 
     db.commit()
     db.refresh(producto)
 
     return producto
 
-
-#FUNCION PARA ELIMINAR MEDIANTE 1
-def eliminar_producto(db: Session, id_producto: int):
-
+# ==========================================
+# 5. ELIMINAR PRODUCTO (SOFT DELETE)
+# ==========================================
+def eliminar_producto(db: Session, id_producto: int, admin_id: int):
     producto = db.query(Producto).filter(
-        Producto.id_Producto == id_producto
+        Producto.id_producto == id_producto,
+        Producto.status == "A"
     ).first()
 
     if not producto:
-        raise HTTPException(
-            status_code=404,
-            detail="Producto no encontrado"
-        )
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
 
-    db.delete(producto)
+    # Aplicamos el Borrado Lógico
+    producto.status = "I"
+    producto.user_update = admin_id # Registramos quién lo eliminó
+
     db.commit()
+    
+    return {"mensaje": f"Producto '{producto.nombre_producto}' eliminado exitosamente."}

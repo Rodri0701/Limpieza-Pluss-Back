@@ -29,25 +29,30 @@ def view_usuario(usuario_id: int, db: Session):
 
     return usuario
 
-def actualizar_usuario(usuario_id: int, db: Session, usuario_in: UsuarioUpdate  ):
-    # 2. Buscar si el usuario existe en la Base de Datos
+def actualizar_usuario(db: Session, usuario_id: int, usuario_in: UsuarioUpdate):
     usuario_db = db.query(Usuarios).filter(Usuarios.id_user == usuario_id).first()
     if not usuario_db:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    
-    # 3. Extraer los datos del esquema, ignorando los que vengan como None (exclude_unset=True)
+
+    # 1. Convertimos el esquema a diccionario ignorando los campos que el usuario NO mandó
     datos_a_actualizar = usuario_in.model_dump(exclude_unset=True)
-    
-    # 4. Caso especial: Si el usuario envió una nueva contraseña, hay que encriptarla
+
+    # 2. TRATAMIENTO QUIRÚRGICO PARA LA CONTRASEÑA (El Blindaje)
     if "password" in datos_a_actualizar:
-        nueva_pwd_plana = datos_a_actualizar.pop("password") # Sacamos la contraseña en texto plano
-        datos_a_actualizar["hashed_password"] = get_password_hash(nueva_pwd_plana) # Metemos el hash
+        pass_nuevo = datos_a_actualizar["password"]
         
-    # 5. Mapear dinámicamente los campos que sí se enviaron hacia el objeto de SQLAlchemy
+        # Si el password nuevo es válido (no está vacío y no es el texto por defecto de Swagger)
+        if pass_nuevo and pass_nuevo.strip() != "" and pass_nuevo.lower() != "string":
+            # Lo encriptamos antes de guardarlo en la columna hashed_password
+            usuario_db.hashed_password = get_password_hash(pass_nuevo)
+            
+        # Sacamos el password del diccionario para que el bucle de abajo no intente mapearlo ciegamente
+        datos_a_actualizar.pop("password")
+
+    # 3. Bucle para actualizar el resto de los campos normales (nombre, edad, etc.)
     for llave, valor in datos_a_actualizar.items():
         setattr(usuario_db, llave, valor)
-        
-    # 6. Guardar los cambios en la base de datos
+
     db.commit()
     db.refresh(usuario_db)
     

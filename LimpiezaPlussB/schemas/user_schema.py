@@ -25,7 +25,7 @@ class UsuarioUpdate(BaseModel):
     calle: Optional[str] = None
     colonia: Optional[str] = None
     num_exterior: Optional[str] = None
-    password: Optional[str] = None # Por si quiere cambiar su contraseña
+    password: Optional[str] = Field(default=None, min_length=6)
    
 
 class UsuarioResponse(UsuarioBase):

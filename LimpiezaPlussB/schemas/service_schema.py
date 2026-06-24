@@ -1,34 +1,35 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional
 from datetime import datetime
 
-# 1. ESQUEMA BASE: Los campos comunes
+# 1. ESQUEMA BASE: Los campos comunes (Catálogo Puro)
 class ServicioBase(BaseModel):
-    nombre_Servicio: str
+    nombre_servicio: str
     precio: float = Field(gt=0)
-    Descripcion: str
-    Categoria: str
-    Status_servicio: Literal["A", "O", "I"] = "A"
-    fecha_reserva: Optional[datetime] = None 
-    duracion_estimada_horas: Optional[float] = None
-
+    descripcion: str
+    categoria: str
+    duracion_estimada_horas: Optional[float] = Field(default=None, gt=0)
 
 # 2. HEREDA LO DE LA BASE
 class ServicioCreate(ServicioBase):
     pass # Hereda todo tal cual de ServicioBase
 
+# 3. ESQUEMA DE ACTUALIZACIÓN (Todo opcional para ediciones parciales)
 class ServicioUpdate(BaseModel):
-    nombre_Servicio: Optional[str] = None
+    nombre_servicio: Optional[str] = None
     precio: Optional[float] = Field(default=None, gt=0)
-    Descripcion: Optional[str] = None
-    Categoria: Optional[str] = None
-    Status_servicio: Optional[Literal["A", "O", "I"]] = None
-    fecha_reserva: Optional[datetime] = None 
+    descripcion: Optional[str] = None
+    categoria: Optional[str] = None
     duracion_estimada_horas: Optional[float] = None
 
-# 4. ESQUEMA RESPONSE: El "Filtro" para la respuesta
+# 4. ESQUEMA RESPONSE: El "Filtro" para la respuesta hacia el Frontend
 class ServicioResponse(ServicioBase):
-    id_Servicio: int
-    #user_id: Optional[int] = None # Por si necesitas devolver qué usuario hizo la reserva
+    id_servicio: int
+    status: str
+    fecha_creacion: datetime
+    # Mostramos quién ha interactuado con este servicio de forma opcional
+    user_alta: Optional[int] = None 
+    user_update: Optional[int] = None
+    fecha_update: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
