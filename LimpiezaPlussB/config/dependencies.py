@@ -46,3 +46,12 @@ def obtener_usuario_admin(usuario_actual: Usuarios = Depends(obtener_usuario_act
             detail = "Necesitas ser ADMINISTRADOR para realizar esta acción"
         )
     return usuario_actual
+
+
+def obtener_usuario_empleado(usuario_actual: Usuarios = Depends(obtener_usuario_actual)):
+    if usuario_actual.roll not in ["Empleado", "admin"]:
+        raise HTTPException(
+            status_code= status.HTTP_403_FORBIDDEN,
+            detail="Necesitas permiso de ADMINISTRADOR"
+        )
+    return usuario_actual

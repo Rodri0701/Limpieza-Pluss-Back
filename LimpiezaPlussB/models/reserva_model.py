@@ -10,6 +10,7 @@ class Reserva(Base):
     # ¿Quién reserva y qué servicio?
     user_id = Column(Integer, ForeignKey("usuarios.id_user"), nullable=False)
     servicio_id = Column(Integer, ForeignKey("servicios.id_servicio"), nullable=False)
+    empleado_id = Column(Integer, ForeignKey("usuarios.id_user"), nullable= True)
     
     # ¿Cuándo es la cita?
     fecha_reserva = Column(DateTime, nullable=False)
